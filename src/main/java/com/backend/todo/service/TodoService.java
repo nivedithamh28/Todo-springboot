@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.backend.todo.dto.TodoRequestDTO;
@@ -11,34 +12,55 @@ import com.backend.todo.dto.TodoResponseDTO;
 import com.backend.todo.exception.ResourceNotFoundException;
 import com.backend.todo.mapper.TodoMapper;
 import com.backend.todo.model.Todo;
+import com.backend.todo.model.User;
 import com.backend.todo.repository.TodoRepository;
+import com.backend.todo.repository.UserRepository;
 
 @Service
 public class TodoService {
 
     @Autowired
     private TodoRepository todoRepository;
+  
        private final TodoMapper todoMapper;
+
+        @Autowired
+    private UserRepository userRepository;
 
     public TodoService(TodoMapper todoMapper) {
         this.todoMapper = todoMapper;
     }
 
- 
+ private String getCurrentUsername() {
+        return SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getName();
+    }
 
+       public TodoResponseDTO createTodo(TodoRequestDTO dto) {
+        String username = getCurrentUsername();
 
-    public TodoResponseDTO createTodo(TodoRequestDTO dto) {
-        Todo todo = todoMapper.toEntity(dto);
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Todo todo = new Todo();
+        todo.setTitle(dto.getTitle());
+        todo.setCompleted(false);
+        todo.setUser(user);
+
         return todoMapper.toResponseDTO(todoRepository.save(todo));
     }
 
+   public List<TodoResponseDTO> getAllTodos() {
+    String username = getCurrentUsername();
 
-    public List<TodoResponseDTO> getAllTodos() {
-        return todoRepository.findAll()
-                .stream()
-                .map(todoMapper::toResponseDTO)
-                .toList();
-    }
+    return todoRepository.findByUserUsername(username)
+            .stream()
+            .map(todoMapper::toResponseDTO) // Todo → DTO
+            .toList();
+}
+
 
     
     public TodoResponseDTO getTodoById(Long id) {

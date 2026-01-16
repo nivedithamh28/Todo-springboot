@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import com.backend.todo.dto.LoginRequestDTO;
 import com.backend.todo.dto.LoginResponseDTO;
 import com.backend.todo.dto.RegisterRequestDTO;
+import com.backend.todo.enums.Role;
 import com.backend.todo.exception.BadRequestException;
 import com.backend.todo.exception.UnauthorizedException;
 import com.backend.todo.model.User;
@@ -44,6 +45,8 @@ public class AuthService {
         user.setEmail(dto.getEmail());
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
 
+        user.setRole(Role.ROLE_USER);
+
         userRepository.save(user);
     }
 
@@ -58,7 +61,7 @@ public class AuthService {
             throw new UnauthorizedException("Invalid username or password");
         }
 
-        String token = jwtUtil.generateToken(user.getUsername());
+        String token = jwtUtil.generateToken( user.getUsername(), user.getRole().name() );  
 
         return new LoginResponseDTO(token);
     }

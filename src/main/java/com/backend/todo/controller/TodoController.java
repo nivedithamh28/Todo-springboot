@@ -3,6 +3,7 @@ package com.backend.todo.controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,39 +21,42 @@ import com.backend.todo.service.TodoService;
 @RequestMapping("/api/todos")
 public class TodoController {
 
-@Autowired
-private TodoService todoService;
+    @Autowired
+    private TodoService todoService;
 
+    // USER can create todo
+    @PreAuthorize("hasRole('USER')")
+    @PostMapping
+    public TodoResponseDTO createTodo(@RequestBody TodoRequestDTO dto) {
+        return todoService.createTodo(dto);
+    }
 
+    // USER can view todos
+    @PreAuthorize("hasRole('USER')")
+    @GetMapping
+    public List<TodoResponseDTO> getAllTodos() {
+        return todoService.getAllTodos();
+    }
 
+    // USER can view single todo
+    @PreAuthorize("hasRole('USER')")
+    @GetMapping("/{id}")
+    public TodoResponseDTO getTodoById(@PathVariable Long id) {
+        return todoService.getTodoById(id);
+    }
 
-@PostMapping
-public TodoResponseDTO createTodo(@RequestBody TodoRequestDTO dto) {
-return todoService.createTodo(dto);
-}
+    // USER can update todo
+    @PreAuthorize("hasRole('USER')")
+    @PutMapping("/{id}")
+    public TodoResponseDTO updateTodo(@PathVariable Long id,
+                                     @RequestBody TodoRequestDTO dto) {
+        return todoService.updateTodo(id, dto);
+    }
 
-
-@GetMapping
-public List<TodoResponseDTO> getAllTodos() {
-return todoService.getAllTodos();
-}
-
-
-@GetMapping("/{id}")
-public TodoResponseDTO getTodoById(@PathVariable Long id) {
-return todoService.getTodoById(id);
-}
-
-
-@PutMapping("/{id}")
-public TodoResponseDTO updateTodo(@PathVariable Long id,
-@RequestBody TodoRequestDTO dto) {
-return todoService.updateTodo(id, dto);
-}
-
-
-@DeleteMapping("/{id}")
-public void deleteTodo(@PathVariable Long id) {
-todoService.deleteTodo(id);
-}
+    // ONLY ADMIN can delete todo
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{id}")
+    public void deleteTodo(@PathVariable Long id) {
+        todoService.deleteTodo(id);
+    }
 }
