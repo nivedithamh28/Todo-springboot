@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import com.backend.todo.dto.TodoRequestDTO;
 import com.backend.todo.dto.TodoResponseDTO;
 import com.backend.todo.exception.ResourceNotFoundException;
+import com.backend.todo.exception.UnauthorizedException;
 import com.backend.todo.mapper.TodoMapper;
 import com.backend.todo.model.Todo;
 import com.backend.todo.model.User;
@@ -63,29 +64,46 @@ public class TodoService {
 
 
     
-    public TodoResponseDTO getTodoById(Long id) {
-        Todo todo = todoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Todo not found with id: " + id));
-        return todoMapper.toResponseDTO(todo);
+   public TodoResponseDTO getTodoById(Long id) {
+    String username = getCurrentUsername();
+
+    Todo todo = todoRepository.findById(id)
+            .orElseThrow(() ->
+                    new ResourceNotFoundException("Todo not found"));
+
+    if (!todo.getUser().getUsername().equals(username)) {
+        throw new UnauthorizedException("Access denied");
     }
+
+    return todoMapper.toResponseDTO(todo);
+}
+
 
   
-    public TodoResponseDTO updateTodo(Long id, TodoRequestDTO dto) {
-        Todo todo = todoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Todo not found with id: " + id));
+public TodoResponseDTO updateTodo(Long id, TodoRequestDTO dto) {
+    String username = getCurrentUsername();
 
-        todo.setTitle(dto.getTitle());
-        todo.setCompleted(dto.isCompleted());
+    Todo todo = todoRepository.findById(id)
+            .orElseThrow(() ->
+                    new ResourceNotFoundException("Todo not found"));
 
-        return todoMapper.toResponseDTO(todoRepository.save(todo));
+    if (!todo.getUser().getUsername().equals(username)) {
+        throw new UnauthorizedException("Access denied");
     }
 
-     public void deleteTodo(Long id) {
+    todo.setTitle(dto.getTitle());
+    todo.setCompleted(dto.isCompleted());
 
-        Todo todo = todoRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Todo not found with id: " + id));
+    return todoMapper.toResponseDTO(todoRepository.save(todo));
+}
 
-        todoRepository.delete(todo);
-    }
+
+   public void deleteTodo(Long id) {
+    Todo todo = todoRepository.findById(id)
+            .orElseThrow(() ->
+                    new ResourceNotFoundException("Todo not found"));
+
+    todoRepository.delete(todo);
+}
+
 }

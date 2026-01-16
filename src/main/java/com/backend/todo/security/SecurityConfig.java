@@ -23,25 +23,34 @@ public class SecurityConfig {
     public SecurityConfig(JwtAuthFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
-
- @Bean
+@Bean
 public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
     http
         .csrf(csrf -> csrf.disable())
         .authorizeHttpRequests(auth -> auth
+            // Public endpoints
             .requestMatchers("/api/auth/**").permitAll()
+            .requestMatchers(
+                "/v3/api-docs/**",
+                "/swagger-ui.html",
+                "/swagger-ui/**",
+                "/swagger-ui/index.html"
+            ).permitAll()
+            // All other endpoints require authentication
             .anyRequest().authenticated()
         )
         .sessionManagement(session ->
             session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
         );
 
+    // Only add JWT filter to non-Swagger endpoints
     http.addFilterBefore(jwtAuthenticationFilter,
             UsernamePasswordAuthenticationFilter.class);
 
     return http.build();
 }
+
 
 
     @Bean
